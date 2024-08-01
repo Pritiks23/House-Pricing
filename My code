@@ -1,0 +1,85 @@
+# Conventionally people rename the pandas import to pd for brevity
+import pandas as pd
+import numpy as np
+np.random.seed(416)
+
+# Load in the data and preview it
+sales = pd.read_csv('home_data.csv') 
+sales.head()
+num_rows = len(sales)
+y =sales['price']
+# Finds how many dimensions are in our input space (i.e., how many columns are there other than the output column),
+# Save the number of dimensions in the input space in a variable called input_dimensions.
+input_dimensions = len(sales.columns) - 1
+# Compute the average (mean) price of houses in the dataset with 3 bedrooms. Saves the result in avg_price_3_bed.
+avg_price_3_bed = sales[sales['bedrooms'] == 3]['price'].mean()
+# Computes the fraction of properties with sqft_living between 2000 (inclusive) and 4000 (exclusive).
+# Your answer should be stored in percent_q3 and it should be a number between 0 and 1.
+numerator = len(sales[(sales['sqft_living'] >= 2000) & (sales['sqft_living'] < 4000)])
+# TODO
+percent_q3 = numerator/num_rows
+# First we split the data into a training set and a validation set.
+from sklearn.model_selection import train_test_split
+
+# Split data into 70% train, 15% validation, and 15% test
+train_data, val_and_test_data = train_test_split(sales, test_size=0.3)
+val_data, test_data = train_test_split(val_and_test_data, test_size=0.5) # 50% of 30% is 15%
+
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+# Plot sqft_living vs housing price for the train and val dataset
+plt.scatter(train_data['sqft_living'], train_data['price'], marker='+', label='Train')
+plt.scatter(val_data['sqft_living'], val_data['price'], marker='.', label='Validation')
+
+# Code to customize the axis labels
+plt.legend()
+plt.xlabel('Sqft Living')
+plt.ylabel('Price')
+basic_features = ['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'zipcode']
+# Note that advanced_features contains basic_features and more.
+advanced_features = basic_features + [
+    'condition',      # condition of the house
+    'grade',          # measure of qality of construction
+    'waterfront',     # waterfront property 
+    'view',           # type of view
+    'sqft_above',     # square feet above ground
+    'sqft_basement',  # square feet in basementab
+    'yr_built',       # the year built
+    'yr_renovated',   # the year renovated
+    'lat',            # the longitude of the parcel
+    'long',           # the latitide of the parcel
+    'sqft_living15',  # average sq.ft. of 15 nearest neighbors 
+    'sqft_lot15',     # average lot size of 15 nearest neighbors 
+]
+from sklearn.linear_model import LinearRegression
+
+
+
+# TODO
+ 
+basic_model = LinearRegression().fit(train_data[basic_features], train_data["price"])
+advanced_model = LinearRegression().fit(train_data[advanced_features], train_data["price"])
+# Finding the Root Mean Squared Errors (RMSE) on the training data using the basic model and the advanced model?
+
+from sklearn.metrics import mean_squared_error
+
+# TODO
+# i wanted to find differences between preidcted values: basic_model.predict(train_data[basic_features]) and real values:mean_squared_error(train_data['price']
+train_rmse_basic = np.sqrt(mean_squared_error(train_data['price'], basic_model.predict(train_data[basic_features])))
+train_rmse_advanced = np.sqrt(mean_squared_error(train_data['price'], advanced_model.predict(train_data[advanced_features])))
+val_rmse_basic = np.sqrt(mean_squared_error(val_data['price'], basic_model.predict(val_data[basic_features])))
+val_rmse_advanced = np.sqrt(mean_squared_error(val_data['price'], advanced_model.predict(val_data[advanced_features])))
+
+# Using your validation errors, determine the model that is better. For the better model,
+# compute its test error, and store it in a variable test_rmse.
+
+if(val_rmse_advanced < val_rmse_basic):
+    accurate_model = advanced_model
+    accurate_features = advanced_features
+    test_rmse = np.sqrt(mean_squared_error(test_data['price'], accurate_model.predict(test_data[accurate_features])))
+else:
+    # if they are equal I wanted to choose the more simpler model, the most # of features are not neccessarily better
+    accurate_model = basic_model
+    accurate_features = basic_features
+    test_rmse = np.sqrt(mean_squared_error(test_data['price'], accurate_model.predict(test_data[accurate_features])))
